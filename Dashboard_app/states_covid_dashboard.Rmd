@@ -96,10 +96,11 @@ renderPlot({
   shewhart_data <- covid.us.df %>%
     filter(state == input$State, death >= 10) %>%
     arrange(date) %>% 
-    select(date, var = input$count_var)
+    select(date, var = input$count_var) %>% 
+    filter(!is.na(var))
   qcc(shewhart_data$var, type = "xbar.one", labels = as.character(shewhart_data$date),
       title = paste("Individuals Chart of Daily", input$count_var,"for", input$State),
-      ylab = "Count")
+      ylab = "Count", ylim = c(min(shewhart_data$var)-5, 1.1*max(shewhart_data$var)))
 })
 
 ```
