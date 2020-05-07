@@ -1,0 +1,109 @@
+---
+title: "US States COVID-19 Trends"
+author: "David Himrich"
+date: "5 May 2020"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: united
+runtime: shiny   
+---
+
+
+
+```{r global, include=FALSE}
+
+library(flexdashboard)
+library(jsonlite)
+library(tidyverse)
+library(lubridate)
+library(qcc)
+
+load("last_covid_date.RData")
+
+## Only load new data from the web site if it's after the likely update time
+if (now(tzone = "UTC") > last_date + days(1) + hours(21)) {
+  covid.us.df <- fromJSON("https://covidtracking.com/api/v1/states/daily.json") %>%
+    mutate(date = ymd(date))
+  save(covid.us.df, file = "US_Covid_Tracking.RData")
+  last_date <- max(covid.us.df$date)
+  save(last_date, file = "last_covid_date.RData")
+} else {
+  load("US_Covid_Tracking.RData") # loads covid.us.df
+}
+
+```
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+selectInput("State", label = "US State:",
+            choices = sort(unique(covid.us.df$state)), selected = "OK")
+
+selectInput("count_var", label = "Display variable:",
+            choices = c("hospitalizedCurrently" , "inIcuCurrently" , "deathIncrease"), 
+            selected = "deathIncrease")
+```
+
+I found many useful visualizations for COVID-19 tracking at https://covidtracking.com and also at https://ourworldindata.org/coronavirus. However, many of those graphics display cumulative counts and I found it hard to identify trends. This web application allows the user to select a US State and selected COVID-19 daily count data, and view a simple running record, and a Shewhart chart.
+
+A Shewhart chart is also known as a control chart or process behavior chart, and provides a simple way to identify trends. I am an industrial engineer by training and have applied them to many different data sets over the years. They identify departures from random patterns such as a run of points on one side of the center line (orange on these charts) or single points beyond the process limits (red on these charts.)
+
+> The data on this page were current as of the afternoon (EDT) of `r last_date`.
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+### Daily Running Record
+
+```{r}
+
+renderPlot({
+  running_data <- covid.us.df %>%
+    filter(state == input$State) %>%
+    arrange(date) %>% 
+    select(date, var = input$count_var)
+  qplot(date, var, data = running_data, geom = "path",
+        ylab = input$count_var,
+        main = paste("Daily COVID-19", input$count_var,"for", input$State))
+})
+```
+
+### Data Table
+
+```{r}
+
+renderTable({
+  covid.us.df %>%
+    filter(state == input$State) %>%
+    arrange(date) %>% 
+    mutate(date = format(date, '%Y-%m-%d')) %>% 
+    select(date, deathIncrease, death, hospitalizedCurrently, inIcuCurrently)
+})
+```
+
+
+Column
+-----------------------------------------------------------------------
+
+### Shewhart Chart
+
+```{r}
+
+renderPlot({
+  shewhart_data <- covid.us.df %>%
+    filter(state == input$State, death >= 10) %>%
+    arrange(date) %>% 
+    select(date, var = input$count_var)
+  qcc(shewhart_data$var, type = "xbar.one", labels = as.character(shewhart_data$date),
+      title = paste("Individuals Chart of Daily", input$count_var,"for", input$State),
+      ylab = "Count")
+})
+
+```
+
+> I have started the Shewhart charts on the day of the tenth cumulative death in a State. For some States, that method produces a run below the center during the early phase of the pandemic. Those runs are signals of conditions we would expect to see.
+
+

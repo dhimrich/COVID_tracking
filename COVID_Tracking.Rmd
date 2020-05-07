@@ -1,0 +1,216 @@
+---
+title: "COVID-19 Tracking"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Retrieve US COVID-19 Tracking Figures
+
+The site https://covidtracking.com provides and API. I will download the "States Historical Data" file.
+
+```{r}
+
+library(jsonlite)
+library(tidyverse)
+library(lubridate)
+library(qcc)
+
+# covid.us.df <- fromJSON("response_1588546050977.json") %>%
+#   mutate(date = ymd(date))
+
+covid.us.df <- fromJSON("https://covidtracking.com/api/v1/states/daily.json") %>%
+  mutate(date = ymd(date))
+
+glimpse(covid.us.df)
+
+```
+
+# Oklahoma COVID-19 History
+
+## Daily Death Counts
+
+### Running Record
+
+```{r}
+
+covid.us.df %>%
+  filter(state == "OK") %>%
+  arrange(date) %>%
+  qplot(date, deathIncrease  , data = ., geom = "path")
+
+```
+
+### Shewhart Chart
+
+```{r}
+
+ok.di.df <- covid.us.df %>%
+  filter(state == "OK") %>%
+  arrange(date)
+
+ok.di.df %>% 
+  select(date, deathIncrease, death)
+
+```
+
+March 28, 2020 is the first date with more than 2 deaths, and also the date on which cumulative deaths exceeded 10. We will start the Shewhart chart there.
+
+```{r}
+
+ok.di.df <- ok.di.df %>% 
+  filter(death >= 10)
+
+qcc(ok.di.df$deathIncrease, type = "xbar.one", labels = as.character(ok.di.df$date))
+
+```
+
+Except for a spike on `r ok.di.df$date[ok.di.df$deathIncrease > 17]`, daily COVID-19 deaths in Oklahoma have varied randomly between 0 and 17, with a mean of about 6.
+
+## Daily Totals of Hospitalized Patients
+
+These are the counts each day of COVID-19 patients hospitalized on that day.
+
+### Running Record
+
+```{r}
+
+covid.us.df %>%
+  filter(state == "OK") %>%
+  arrange(date) %>%
+  qplot(date, hospitalizedCurrently  , data = ., geom = "path")
+
+```
+
+## Daily Totals of Patients in Intensive Care
+
+These are the counts each day of COVID-19 patients in intensive care units.
+
+### Running Record
+
+```{r}
+
+covid.us.df %>%
+  filter(state == "OK") %>%
+  arrange(date) %>%
+  qplot(date, inIcuCurrently  , data = ., geom = "path")
+
+```
+
+# Minnesota Deaths
+
+```{r}
+covid.us.df %>%
+  filter(state == "MN") %>%
+  arrange(date) %>%
+  qplot(date, deathIncrease  , data = ., geom = "path")
+
+```
+
+
+```{r}
+
+mn.di.df <- covid.us.df %>%
+  filter(state == "MN", death >= 10) %>%
+  arrange(date) %>%
+  select(date, deathIncrease)
+
+  qcc(mn.di.df$deathIncrease, type = "xbar.one", labels = as.character(mn.di.df$date))
+
+```
+
+# Mississippi Deaths
+
+```{r}
+covid.us.df %>%
+  filter(state == "MS") %>%
+  arrange(date) %>%
+  qplot(date, deathIncrease  , data = ., geom = "path")
+
+```
+
+```{r}
+
+ms.di.df <- covid.us.df %>%
+  filter(state == "MS", death >= 10) %>%
+  arrange(date) %>%
+  select(date, deathIncrease)
+
+qcc(ms.di.df$deathIncrease, type = "xbar.one", labels = as.character(ms.di.df$date))
+
+```
+
+# Oregon Deaths
+
+```{r}
+covid.us.df %>%
+  filter(state == "OR") %>%
+  arrange(date) %>%
+  qplot(date, deathIncrease  , data = ., geom = "path")
+
+```
+
+```{r}
+
+or.di.df <- covid.us.df %>%
+  filter(state == "OR", death >= 10) %>%
+  arrange(date) %>%
+  select(date, deathIncrease)
+
+qcc(or.di.df$deathIncrease, type = "xbar.one", labels = as.character(or.di.df$date))
+
+```
+
+# Florida Deaths
+
+```{r}
+covid.us.df %>%
+  filter(state == "FL") %>%
+  arrange(date) %>%
+  qplot(date, deathIncrease  , data = ., geom = "path")
+
+```
+
+```{r}
+
+fl.di.df <- covid.us.df %>%
+  filter(state == "FL", death >= 10) %>%
+  arrange(date) %>%
+  select(date, deathIncrease)
+
+qcc(fl.di.df$deathIncrease, type = "xbar.one", labels = as.character(fl.di.df$date))
+
+```
+
+# All States
+
+```{r}
+
+covid.us.df %>%
+  arrange(date) %>%
+  group_by(date) %>% 
+  summarize(deaths = sum(deathIncrease, na.rm = TRUE), 
+            cum.deaths = sum(death, na.rm = TRUE)) %>% 
+  qplot(date, deaths , data = ., geom = "path")
+
+
+```
+
+```{r}
+
+us.di.df <- covid.us.df %>%
+  group_by(date) %>%
+  summarize(deaths = sum(deathIncrease, na.rm = TRUE),
+            cum.deaths = sum(death, na.rm = TRUE)) %>% 
+  filter(cum.deaths >= 1000) %>%
+  select(date, deaths)
+
+qcc(us.di.df$deaths, type = "xbar.one", labels = as.character(us.di.df$date))
+
+short.us <- us.di.df %>% 
+  filter(date >= ymd("2020-04-07"))
+  
+qcc(short.us$deaths, type = "xbar.one", labels = as.character(short.us$date))
+
+```
+
