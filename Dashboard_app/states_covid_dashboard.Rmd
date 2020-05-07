@@ -1,12 +1,13 @@
 ---
 title: "US States COVID-19 Trends"
 author: "David Himrich"
-date: "5 May 2020"
+date: "7 May 2020"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
     theme: united
+    source_code: embed
 runtime: shiny   
 ---
 
