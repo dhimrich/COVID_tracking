@@ -1,0 +1,226 @@
+---
+title: "COVID-19 in Five States"
+author: "David Himrich"
+date: "9 May 2020"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: 2
+---
+
+# Introduction
+
+The site https://covidtracking.com provides numerous visualizations and summaries of COVID-19 data in the Unitied States. They also provide an API to enable users to download their data sets. In this document I will download and summarize their "States Historical Data" file.
+
+Another site with helpful visualizations is  https://ourworldindata.org/coronavirus. However, many of the graphics at these sites display cumulative counts and I found it hard to identify trends. In this document I will examine daily death counts in the five States of the Upper Midwest.
+
+For each State I will provide a simple running record of the daily death count. I will also place those same counts on a Shewhart chart for individual values. A Shewhart chart is also known as a control chart or process behavior chart, and provides a simple way to identify trends. I am an industrial engineer by training and have applied them to many different data sets over the years. They identify departures from random patterns such as a run of points on one side of the center line (orange on these charts) or single points beyond the process limits (red on these charts.) I have started the Shewhart charts on the day of the tenth cumulative death in a State. For some States, that method produces a run below the center during the early phase of the pandemic. Those runs are signals of conditions we would expect to see.
+
+I have published a web application at https://dhimrich.shinyapps.io/states_covid_dashboard that enables user display similar charts for daily counts of deaths, hospitalized patients, and patients in ICU for any of the States.
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, warning = TRUE, message = FALSE, comment = "")
+
+library(jsonlite)
+library(tidyverse)
+library(lubridate)
+library(qcc)
+library(knitr)
+
+## functions
+qplot_function <- function(df, state_code) {
+  filter(df, state == state_code) %>%
+  arrange(date) %>%
+  qplot(date, deathIncrease  , data = ., geom = "path",
+        ylab = "Deaths",
+        main = paste("Daily COVID-19 Deaths for", state_code))
+}
+
+shewhart_function <- function(df, state_code) {
+  shewhart_data <- filter(df, state == state_code, death >= 10, !is.na(deathIncrease)) %>%
+    arrange(date) %>% 
+    select(date, deathIncrease)
+    shew_obj <- qcc(shewhart_data$deathIncrease, type = "xbar.one", 
+        labels = as.character(shewhart_data$date),
+        title = paste("Individuals Chart of Daily Deaths for", state_code), 
+        ylab = "Count", 
+        ylim = c(min(shewhart_data$deathIncrease)-5, 1.1*max(shewhart_data$deathIncrease)),
+        plot = FALSE)
+    plot(shew_obj)
+}
+
+data_table_function <- function(df, state_code) {
+  filter(df, state == state_code) %>%
+    arrange(date) %>%
+    select(date, deathIncrease) %>% 
+    kable()
+}
+```
+
+```{r load_data}
+covid.us.df <- fromJSON("https://covidtracking.com/api/v1/states/daily.json") %>%
+  mutate(date = ymd(date))
+```
+
+
+# Minnesota
+
+## Running Record
+
+```{r mn_run}
+
+covid.us.df %>%
+  qplot_function(state_code = "MN") 
+
+```
+
+## Shewhart Chart
+
+```{r mn_shew}
+
+covid.us.df %>%
+  shewhart_function(state_code = "MN") 
+
+```
+
+For Minnesota, this Shewhart chart is unhelpful. If we started the chart in late April, it might suggest that deaths have been steady at about 20 per day since then.
+
+## Data Table
+
+```{r mn_data}
+
+covid.us.df %>%
+  data_table_function(state_code = "MN") 
+
+```
+
+# Wisconsin
+
+## Running Record
+
+```{r wi_run}
+
+covid.us.df %>%
+  qplot_function(state_code = "WI") 
+
+```
+
+## Shewhart Chart
+
+```{r wi_shew}
+
+covid.us.df %>%
+  shewhart_function(state_code = "WI") 
+
+
+```
+
+The Shewhart chart for Wisconsin signals a run below the centerline in the early phase of the pandemic. Deaths in Wisconsin appear to have varied randomly at around 10 per day since early April.
+
+## Data Table
+
+```{r wi_data}
+
+covid.us.df %>%
+  data_table_function(state_code = "WI") 
+
+```
+
+# Iowa
+
+## Running Record
+
+```{r ia_run}
+
+covid.us.df %>%
+  qplot_function(state_code = "IA") 
+
+```
+
+## Shewhart Chart
+
+```{r ia_shew}
+
+covid.us.df %>%
+  shewhart_function(state_code = "IA") 
+
+```
+
+For Iowa, the Shewhart chart suggests a recent increase in daily deaths. The red point above the upper process limit represents the 19 deaths on 2020-05-05 (see the data table below.) That point, and three consecutive subsequent counts of 12 deaths, all suggest a recent increase.
+
+## Data Table
+
+```{r ia_data}
+
+covid.us.df %>%
+  data_table_function(state_code = "IA") 
+
+```
+
+# South Dakota
+
+## Running Record
+
+```{r sd_run}
+
+covid.us.df %>%
+  qplot_function(state_code = "SD") 
+
+```
+
+## Shewhart Chart
+
+```{r sd_shew}
+
+covid.us.df %>%
+  shewhart_function(state_code = "SD") 
+
+```
+
+The running record and Shewhart chart for South Dakota are both interesting because that State has experienced relatively few COVID-19 deaths. South Dakota has recorded zero deaths on many days, and did not record the tenth death until 2020-04-24. They have recorded about 1.5 deaths per day since then, with no apparent increase. It will be difficult for this chart to detect a decrease from a level that low. It will require 7 or 8 consecutive days with 0 or 1 death recorded.
+
+## Data Table
+
+```{r sd_data}
+
+covid.us.df %>%
+  data_table_function(state_code = "SD") 
+
+```
+
+# North Dakota
+
+## Running Record
+
+```{r nd_run}
+
+covid.us.df %>%
+  qplot_function(state_code = "ND") 
+
+```
+
+## Shewhart Chart
+
+```{r nd_shew}
+
+covid.us.df %>%
+  shewhart_function(state_code = "ND") 
+
+```
+
+THe 6 deaths recorded in North Dakota on 2020-05-06 produced a signal on this Shewhart chart. Those deaths might be work closer examination for some special cause, but this signal may be spurious. THe natural lower limit of zero deaths in a day produces skewed data at levels this low. We could arguably place the upper process limit higher than it is under such circumstances. I interpret the death counts for North Dakota as varying randomly around 1.2 per day since mid-April.
+
+## Data Table
+
+```{r nd_data}
+
+covid.us.df %>%
+  data_table_function(state_code = "ND") 
+
+```
+

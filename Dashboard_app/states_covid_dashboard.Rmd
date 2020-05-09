@@ -1,7 +1,7 @@
 ---
 title: "US States COVID-19 Trends"
 author: "David Himrich"
-date: "7 May 2020"
+date: "9 May 2020"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -10,8 +10,6 @@ output:
     source_code: embed
 runtime: shiny   
 ---
-
-
 
 ```{r global, include=FALSE}
 
@@ -48,7 +46,7 @@ selectInput("count_var", label = "Display variable:",
             selected = "deathIncrease")
 ```
 
-I found many useful visualizations for COVID-19 tracking at https://covidtracking.com and also at https://ourworldindata.org/coronavirus. However, many of those graphics display cumulative counts and I found it hard to identify trends. This web application allows the user to select a US State and selected COVID-19 daily count data, and view a simple running record, and a Shewhart chart.
+I found many useful visualizations for COVID-19 tracking at https://covidtracking.com. This page retrieves data using that site's API. Another site with helpful visualizations is  https://ourworldindata.org/coronavirus. However, many of those graphics display cumulative counts and I found it hard to identify trends. This web application allows the user to select a US State and selected COVID-19 daily count data, and view a simple running record, and a Shewhart chart. Some of the States are not reporting hospitalized and ICU counts; the Shewhart chart area displays an error in those cases.
 
 A Shewhart chart is also known as a control chart or process behavior chart, and provides a simple way to identify trends. I am an industrial engineer by training and have applied them to many different data sets over the years. They identify departures from random patterns such as a run of points on one side of the center line (orange on these charts) or single points beyond the process limits (red on these charts.)
 
