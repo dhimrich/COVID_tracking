@@ -86,6 +86,10 @@ covid.us.df %>%
 covid.us.df %>%
   shewhart_function(state_code = "MN") 
 
+covid.us.df %>% 
+  filter(date >= ymd("2020-04-20")) %>% 
+  shewhart_function(state_code = "MN") 
+
 ```
 
 For Minnesota, this Shewhart chart is unhelpful. If we started the chart in late April, it might suggest that deaths have been steady at about 20 per day since then.
