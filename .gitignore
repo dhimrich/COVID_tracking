@@ -5,6 +5,5 @@
 *.html
 *.json
 *.RData
-/Dashboard_app/*.RData
-/Dashboard_app/rsconnect/
-
+Dashboard_app/*.RData
+Dashboard_app/rsconnect/
