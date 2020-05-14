@@ -1,7 +1,7 @@
 ---
 title: "US States COVID-19 Trends"
 author: "David Himrich"
-date: "9 May 2020"
+date: "14 May 2020"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -45,8 +45,8 @@ selectInput("count_var", label = "Display variable:",
             choices = c("hospitalizedCurrently" , "inIcuCurrently" , "deathIncrease"), 
             selected = "deathIncrease")
 
-dateRangeInput("shewhartrange", "Shewhard Chart Date range:",
-                 start  = "2020-03-30",
+dateRangeInput("shewhartrange", "Shewhart Chart Date range:",
+                 start  = "2020-03-29",
                  end    = last_date,
                  min    = min(covid.us.df$date),
                  max    = last_date,)
