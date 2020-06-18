@@ -1,7 +1,7 @@
 ---
 title: "US States COVID-19 Trends"
 author: "David Himrich"
-date: "14 May 2020"
+date: "18 June 2020"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -18,6 +18,7 @@ library(jsonlite)
 library(tidyverse)
 library(lubridate)
 library(qcc)
+library(zoo)
 
 load("last_covid_date.RData")
 
@@ -69,10 +70,13 @@ renderPlot({
   running_data <- covid.us.df %>%
     filter(state == input$State) %>%
     arrange(date) %>% 
-    select(date, var = input$count_var)
+    select(date, var = input$count_var) %>% 
+    mutate(ma7 = rollmean(var, k=7, na.pad = TRUE))
   qplot(date, var, data = running_data, geom = "path",
         ylab = input$count_var,
-        main = paste("Daily COVID-19", input$count_var,"for", input$State))
+        main = paste("Daily COVID-19", input$count_var,"for", input$State)) +
+    labs(subtitle = "7-day Moving Average in blue") +
+    geom_line(aes(date, ma7), color = "blue", lwd = 2)
 })
 ```
 
