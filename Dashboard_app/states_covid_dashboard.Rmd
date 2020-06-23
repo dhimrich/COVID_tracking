@@ -1,7 +1,7 @@
 ---
 title: "US States COVID-19 Trends"
 author: "David Himrich"
-date: "18 June 2020"
+date: "23 June 2020"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -94,10 +94,10 @@ renderTable({
 ```
 
 
-Column
+Column {.tabset}
 -----------------------------------------------------------------------
 
-### Shewhart Chart
+### Daily Shewhart Chart
 
 ```{r}
 
@@ -109,13 +109,35 @@ renderPlot({
     arrange(date) %>% 
     select(date, var = input$count_var) %>% 
     filter(!is.na(var))
+  
   qcc(shewhart_data$var, type = "xbar.one", labels = as.character(shewhart_data$date),
       title = paste("Individuals Chart of Daily", input$count_var,"for", input$State),
-      ylab = "Count", ylim = c(min(shewhart_data$var)-5, 1.1*max(shewhart_data$var)))
+      xlab = "Date",
+      ylab = "Count", ylim = c(min(shewhart_data$var)-5, 1.5*max(shewhart_data$var)))
 })
 
 ```
 
 > Consider adjusting the date range for the Shewhart charts, especially the start date, to omit runs below the centerline in the early stage of the pandemic from the charts and related calculations. That will help display whether these measurements are predictable over some time period, or are undergoing shifts or trends.
 
+### Weekly Shewhart Chart
 
+```{r}
+
+renderPlot({
+  shewhart_data_week <- covid.us.df %>%
+    filter(state == input$State, 
+           date >= input$shewhartrange[1],
+           date <= input$shewhartrange[2]) %>%
+    arrange(date) %>% 
+    select(date, var = input$count_var) %>% 
+    group_by(Week = week(date)) %>% 
+    summarize(var = mean(var, na.rm = TRUE)) %>% 
+    filter(!is.na(var))
+  
+  qcc(shewhart_data_week$var, type = "xbar.one", labels = as.character(shewhart_data_week$Week),
+      title = paste("Individuals Chart of Average Weekly", input$count_var,"for", input$State),
+      xlab = "Week", ylab = "Count")
+})
+
+```
