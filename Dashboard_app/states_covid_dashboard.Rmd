@@ -131,7 +131,8 @@ renderPlot({
            date <= input$shewhartrange[2]) %>%
     arrange(date) %>% 
     select(date, var = input$count_var) %>% 
-    group_by(Week = week(date)) %>% 
+    group_by(Year = year(date), Week = week(date)) %>% 
+    arrange(Year, Week) %>% 
     summarize(var = mean(var, na.rm = TRUE)) %>% 
     filter(!is.na(var))
   
