@@ -10,3 +10,5 @@ Dashboard_app/rsconnect/
 github_pat.txt
 Weekly_Counts_of_Deaths_by_State_and_Select_Causes__2019-2020.csv
 Weekly_Counts_of_Deaths_by_State_and_Select_Causes__2019-2020.ods
+Socrata_details.txt
+try_socrata.R

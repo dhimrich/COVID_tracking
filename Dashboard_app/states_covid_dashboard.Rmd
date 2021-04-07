@@ -1,7 +1,7 @@
 ---
 title: "US States COVID-19 Trends"
 author: "David Himrich"
-date: "31 January 2021"
+date: "6 April 2021"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -15,6 +15,7 @@ runtime: shiny
 
 library(flexdashboard)
 library(jsonlite)
+library(RSocrata)
 library(tidyverse)
 library(lubridate)
 library(qcc)
@@ -23,15 +24,47 @@ library(zoo)
 load("last_covid_date.RData")
 
 ## Only load new data from the web site if it's after the likely update time
+# if (now(tzone = "UTC") > last_date + days(1) + hours(21)) {
+#   covid.us.df <- fromJSON("https://covidtracking.com/api/v1/states/daily.json") %>%
+#     mutate(date = ymd(date))
+#   save(covid.us.df, file = "US_Covid_Tracking.RData")
+#   last_date <- max(covid.us.df$date)
+#   save(last_date, file = "last_covid_date.RData")
+# } else {
+#   load("US_Covid_Tracking.RData") # loads covid.us.df
+# }
+
+## The final update to the covid tracking web site was 2021-03-07, so just load that final data set
+load("US_Covid_Tracking.RData") # loads covid.us.df
+
+
+## Load daily data from the CDC API
+token <- Sys.getenv("himrich_dashboard_cdc_token")
+
 if (now(tzone = "UTC") > last_date + days(1) + hours(21)) {
-  covid.us.df <- fromJSON("https://covidtracking.com/api/v1/states/daily.json") %>%
-    mutate(date = ymd(date))
-  save(covid.us.df, file = "US_Covid_Tracking.RData")
-  last_date <- max(covid.us.df$date)
+  cdc.df <- read.socrata("https://data.cdc.gov/resource/9mfq-cb36.json",
+                        app_token = token)
+  cdc2.df <- cdc.df %>% 
+  mutate_at(vars(tot_cases:pnew_death,consent_cases:prob_cases), .funs=as.numeric)
+  save(cdc2.df, file = "US_CDC_COVID.RData")
+  last_date <- max(cdc2.df$submission_date)
   save(last_date, file = "last_covid_date.RData")
 } else {
-  load("US_Covid_Tracking.RData") # loads covid.us.df
+  load(file = "US_CDC_COVID.RData") # loads cdc2.df
 }
+
+## Append the CDC new death counts to the covid tracking data set
+
+## Make a CDC output data set with compatible column names
+cdc.out <- cdc2.df %>% 
+  filter(submission_date > ymd("2021-03-07")) %>% 
+  mutate(date = as.Date(submission_date)) %>% 
+  select(date,
+         state,
+         deathIncrease = new_death)
+
+## Bind the CDC output rows onto the existing data set
+covid.us.df <- bind_rows(covid.us.df, cdc.out)
 
 ```
 
@@ -47,17 +80,19 @@ selectInput("count_var", label = "Display variable:",
             selected = "deathIncrease")
 
 dateRangeInput("shewhartrange", "Shewhart Chart Date range:",
-                 start  = "2020-03-29",
+                 start  = "2021-03-08",
                  end    = last_date,
                  min    = min(covid.us.df$date),
                  max    = last_date,)
 ```
 
-I found many useful visualizations for COVID-19 tracking at https://covidtracking.com. This page retrieves data using that site's API. Another site with helpful visualizations is  https://ourworldindata.org/coronavirus. However, many of those graphics display cumulative counts and I found it hard to identify trends. This web application allows the user to select a US State and selected COVID-19 daily count data, and view a simple running record, and a Shewhart chart. Some of the States are not reporting hospitalized and ICU counts; the Shewhart chart area displays an error in those cases.
+I found many useful visualizations for COVID-19 tracking at https://covidtracking.com. This page retrieves data using that site's API. The final update to that data set was 2021-03-07. This application now includes new death counts from the CDC COVID API:  https://data.cdc.gov/Case-Surveillance/United-States-COVID-19-Cases-and-Deaths-by-State-o/9mfq-cb36. Another site with helpful visualizations is  https://ourworldindata.org/coronavirus. However, many of those graphics display cumulative counts and I found it hard to identify trends. 
 
-A Shewhart chart is also known as a control chart or process behavior chart, and provides a simple way to identify trends. I am an industrial engineer by training and have applied them to many different data sets over the years. They identify departures from random patterns such as a run of points on one side of the center line (orange on these charts) or single points beyond the process limits (red on these charts.)
+This web application allows the user to select a US State and selected COVID-19 daily count data, and view a simple running record, and daily or weekly Shewhart charts. Some of the States are not reporting hospitalized and ICU counts; the Shewhart chart area displays an error in those cases.
 
-> The data on this page were current as of the afternoon (EDT) of `r last_date`.
+A Shewhart chart is also known as a control chart or process behavior chart, and provides a simple way to identify trends. I am an industrial engineer by training and have applied them to many different data sets over the years. They identify departures from random patterns such as a run of points on one side of the center line (orange on these charts) or single points beyond the process limits (red on these charts.) These were much more useful earlier in the pandemic, before the waves of infections became obvious. The may become useful again for more recent time periods as daily new death counts return to low levels.
+
+> The data on this page were current as of `r last_date`.
 
 Column {.tabset}
 -----------------------------------------------------------------------
