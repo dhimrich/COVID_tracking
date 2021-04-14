@@ -1,7 +1,7 @@
 ---
 title: "US States COVID-19 Trends"
 author: "David Himrich"
-date: "6 April 2021"
+date: "14 April 2021"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -41,7 +41,7 @@ load("US_Covid_Tracking.RData") # loads covid.us.df
 ## Load daily data from the CDC API
 token <- Sys.getenv("himrich_dashboard_cdc_token")
 
-if (now(tzone = "UTC") > last_date + days(1) + hours(21)) {
+if (now() > last_date + days(1) + hours(8)) {
   cdc.df <- read.socrata("https://data.cdc.gov/resource/9mfq-cb36.json",
                         app_token = token)
   cdc2.df <- cdc.df %>% 
