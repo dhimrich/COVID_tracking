@@ -1,7 +1,7 @@
 ---
 title: "US States COVID-19 Trends"
 author: "David Himrich"
-date: "14 April 2021"
+date: "20 April 2021"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -41,7 +41,7 @@ load("US_Covid_Tracking.RData") # loads covid.us.df
 ## Load daily data from the CDC API
 token <- Sys.getenv("himrich_dashboard_cdc_token")
 
-if (now() > last_date + days(1) + hours(8)) {
+if (today() > last_date + hours(12)) {
   cdc.df <- read.socrata("https://data.cdc.gov/resource/9mfq-cb36.json",
                         app_token = token)
   cdc2.df <- cdc.df %>% 
@@ -92,7 +92,7 @@ This web application allows the user to select a US State and selected COVID-19 
 
 A Shewhart chart is also known as a control chart or process behavior chart, and provides a simple way to identify trends. I am an industrial engineer by training and have applied them to many different data sets over the years. They identify departures from random patterns such as a run of points on one side of the center line (orange on these charts) or single points beyond the process limits (red on these charts.) These were much more useful earlier in the pandemic, before the waves of infections became obvious. The may become useful again for more recent time periods as daily new death counts return to low levels.
 
-> The data on this page were current as of `r last_date`.
+> The most recent data submissions displayed here occurred on `r last_date`.
 
 Column {.tabset}
 -----------------------------------------------------------------------
